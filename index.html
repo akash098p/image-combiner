@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Image Combiner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Smart Image Combiner</h1>
+  <div class="container">
+    <div class="controls">
+      <label for="fileInput" class="custom-upload">Choose Images</label>
+      <input type="file" id="fileInput" multiple accept="image/*" />
+      <button onclick="clearAll()" style="background: #ff4444">Clear All</button>
+    </div>
+
+    <div id="preview" style="display: flex; flex-wrap: wrap; gap: 15px; justify-content: center;"></div>
+
+    <div class="bottom-controls">
+      <button onclick="combineImages()">Create Image</button>
+      <div class="output-box">
+        <canvas id="outputCanvas"></canvas>
+      </div>
+    </div>
+    <a class="download-link" id="downloadLink" target="_blank"></a>
+  </div>
+
+  <!-- Footer label -->
+   <div style="text-align: center;">
+  <div class="footer-label">мα∂є вy αкαsн【ツ】</div>
+
+  <script>
+    let selectedFiles = [];
+    const preview = document.getElementById("preview");
+    const fileInput = document.getElementById("fileInput");
+
+    fileInput.addEventListener("change", (e) => {
+      const files = Array.from(e.target.files);
+      files.forEach((file) => {
+        if (!selectedFiles.includes(file)) {
+          selectedFiles.push(file);
+          showPreview(file);
+        }
+      });
+    });
+
+    function showPreview(file) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const box = document.createElement("div");
+        box.className = "img-box";
+
+        const img = document.createElement("img");
+        img.src = e.target.result;
+
+        const btn = document.createElement("button");
+        btn.textContent = "×";
+        btn.onclick = () => {
+          preview.removeChild(box);
+          selectedFiles = selectedFiles.filter((f) => f !== file);
+        };
+
+        box.appendChild(img);
+        box.appendChild(btn);
+        preview.appendChild(box);
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearAll() {
+      preview.innerHTML = "";
+      selectedFiles = [];
+      const canvas = document.getElementById("outputCanvas");
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      document.getElementById("downloadLink").textContent = "";
+      document.getElementById("downloadLink").href = "#";
+    }
+
+    function combineImages() {
+      if (selectedFiles.length === 0) return alert("No images selected!");
+
+      const imgs = [];
+      let loaded = 0;
+
+      selectedFiles.forEach((file, index) => {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const img = new Image();
+          img.onload = () => {
+            imgs[index] = img;
+            loaded++;
+            if (loaded === selectedFiles.length) drawCombined(imgs);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function drawCombined(images) {
+      const widths = images.map(img => img.width);
+      const heights = images.map(img => img.height);
+      const maxWidth = Math.max(...widths);
+      const totalHeight = heights.reduce((a, b) => a + b, 0);
+
+      const canvas = document.getElementById("outputCanvas");
+      canvas.width = maxWidth;
+      canvas.height = totalHeight;
+      const ctx = canvas.getContext("2d");
+
+      let y = 0;
+      images.forEach(img => {
+        ctx.drawImage(img, 0, y);
+        y += img.height;
+      });
+
+      const link = document.getElementById("downloadLink");
+      link.download = "combined-image.png";
+      link.href = canvas.toDataURL();
+      link.textContent = "⬇ Download Combined Image";
+    }
+  </script>
+</body>
+</html>
